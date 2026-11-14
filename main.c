@@ -2,30 +2,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-size_t my_strlen(const char *s)
-{
-    size_t count = 0;
-    while (*s != '\0')
-    {
-        s++;
-        count++;
-    }
-    return count;
-}
-int word_count(const char *s)
-{
-    const unsigned char *news = (const unsigned char *)s;
-    int count = 0;
-    while (*news != '\0')
-    {
-        if (!isspace(*news) && (isspace(*(news + 1)) || *(news + 1) == '\0'))
-        {
-            count += 1;
-        }
-        news++;
-    }
-    return count;
-}
 
 int word_count_new(const char *s)
 {
@@ -47,99 +23,60 @@ int word_count_new(const char *s)
     }
     return count;
 }
-int old_main(void)
+
+bool read_input(char *buffer, size_t size)
 {
-    struct
+    printf("mysh> ");
+    fflush(stdout);
+    if (fgets(buffer, size, stdin) == NULL)
     {
-        const char *input;
-        int expected;
-    } tests[] = {
-        {"  hello   world ", 2},
-        {"", 0},
-        {"a1", 1},
-        {"ls -la .", 3},
-        {"cat file.txt", 2},
-        {"\t tab\tseparated\n", 2}
-        // ... add yours
-    };
-    int num_tests = sizeof(tests) / sizeof(tests[0]);
-
-    for (int i = 0; i < num_tests; i++)
-    {
-        int actual = word_count(tests[i].input);
-        if (actual != tests[i].expected)
-        {
-            printf("Test %d FAILED! Input: '%s', Expected: %d, Got: %d\n",
-                   i, tests[i].input, tests[i].expected, actual);
-        }
-        else
-        {
-            printf("Test %d PASSED! Input: '%s', Expected: %d, Got: %d\n",
-                   i, tests[i].input, tests[i].expected, actual);
-        }
+        return false;
     }
-    printf("=================> new count function\n");
+    const size_t index = strcspn(buffer, "\n");
 
-    for (int i = 0; i < num_tests; i++)
+    if (buffer[index] == '\n')
     {
-        int new_actual = word_count_new(tests[i].input);
-        if (new_actual != tests[i].expected)
-        {
-            printf("Test %d FAILED! Input: '%s', Expected: %d, Got: %d\n",
-                   i, tests[i].input, tests[i].expected, new_actual);
-        }
-        else
-        {
-            printf("Test %d PASSED! Input: '%s', Expected: %d, Got: %d\n",
-                   i, tests[i].input, tests[i].expected, new_actual);
-        }
+        buffer[index] = '\0';
+        return true;
     }
-    return 0;
+
+    int c = getchar();
+    if (c != EOF && c != '\n')
+    {
+        fprintf(stderr, " input is too long\n");
+        while ((c = getchar()) != '\n' && c != EOF)
+        {
+            /* Loop runs until the rest of the line is fully discarded */
+        }
+        return false;
+    }
+
+    return true;
 }
 
 int main(void)
 {
     char buffer[1024];
-    bool valid;
+
     while (true)
     {
-        valid = true;
-        printf("mysh> ");
-        if (fgets(buffer, sizeof(buffer), stdin) == NULL)
-        {
-            printf("\n");
-            break;
-        }
-        const size_t index = strcspn(buffer, "\n");
 
-        if (buffer[index] == '\n')
+        if (!read_input(buffer, sizeof(buffer)))
         {
-            buffer[index] = '\0';
-        }
-        else if (!feof(stdin))
-        {
-            int c = getchar();
-            if (c != EOF && c != '\n')
+            if (feof(stdin))
             {
-                fprintf(stderr, " input is too long\n");
-                valid = false;
-                while ((c = getchar()) != '\n' && c != EOF)
-                {
-                    /* Loop runs until the rest of the line is fully discarded */
-                }
+                printf("\n");
+                break;
             }
+            continue;
         }
 
-        if (valid)
+        const char *s = &buffer[0];
+        const int wordcount = word_count_new(s);
+        if (wordcount != 0)
         {
-            const char *s = &buffer[0];
-            const int wordcount = word_count_new(s);
-            if (wordcount != 0)
-            {
-                printf("\tYou typed:%s\n", buffer);
-            }
+            printf("\tYou typed:%s\n", buffer);
         }
-        fflush(stdout);
     }
     return 0;
 }
